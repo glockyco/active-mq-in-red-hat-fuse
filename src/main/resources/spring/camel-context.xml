@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="      http://www.springframework.org/schema/beans      http://www.springframework.org/schema/beans/spring-beans.xsd      http://www.springframework.org/schema/aop   http://www.springframework.org/schema/aop/spring-aop.xsd      http://www.springframework.org/schema/context   http://www.springframework.org/schema/context/spring-context.xsd      http://camel.apache.org/schema/spring      http://camel.apache.org/schema/spring/camel-spring.xsd">
+    <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
+        <route id="input1">
+            <from id="input1_timer" uri="timer:timer?repeatCount=10"/>
+            <to id="input1_queue" uri="activemq:queue:input"/>
+        </route>
+        <route id="input2">
+            <from id="input2_timer" uri="timer:timer?repeatCount=10"/>
+            <to id="input2_queue" uri="activemq:queue:input"/>
+        </route>
+        <route id="input3">
+            <from id="input3_timer" uri="timer:timer?repeatCount=10"/>
+            <to id="input3_queue" uri="activemq:queue:input"/>
+        </route>
+        <route id="preprocessing">
+            <from id="preprocessing_input_queue" uri="activemq:queue:input"/>
+            <to id="preprocessing_log" uri="log:preprocessing?groupInterval=1000&amp;groupDelay=1000"/>
+            <to id="preprocessing_output_queue" uri="activemq:queue:preprocessed"/>
+        </route>
+        <route id="processing1">
+            <from id="processing1_input_queue" uri="activemq:queue:preprocessed?destination.consumer.prefetchSize=1"/>
+            <throttle id="processing1_throttle" timePeriodMillis="1000">
+                <constant>1</constant>
+                <to id="processing1_output_queue" uri="activemq:queue:output"/>
+            </throttle>
+        </route>
+        <route id="processing2">
+            <from id="processing2_input_queue" uri="activemq:queue:preprocessed?destination.consumer.prefetchSize=1"/>
+            <throttle id="processing2_throttle" timePeriodMillis="2000">
+                <constant>1</constant>
+                <to id="processing2_output_queue" uri="activemq:queue:output"/>
+            </throttle>
+        </route>
+        <route id="output">
+            <from id="output_queue" uri="activemq:queue:output"/>
+            <to id="output_log" uri="log:output?groupInterval=1000&amp;groupDelay=1000"/>
+        </route>
+    </camelContext>
+</beans>
